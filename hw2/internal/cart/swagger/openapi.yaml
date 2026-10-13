@@ -1,0 +1,144 @@
+openapi: 3.0.3
+info:
+  title: Cart API
+  description: HTTP API сервиса корзины. Состояние хранится в памяти, при рестарте теряется.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+paths:
+  /user/{user_id}/cart/{sku_id}:
+    post:
+      summary: Добавить товар в корзину
+      description: >
+        Добавляет товар в корзину пользователя. Существование товара проверяется
+        в product-service. Повторное добавление складывает количество.
+      parameters:
+        - $ref: '#/components/parameters/UserID'
+        - name: sku_id
+          in: path
+          required: true
+          description: Идентификатор товара
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+          example: 1076963
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddItemRequest'
+      responses:
+        '200':
+          description: Товар добавлен, тело ответа пустое
+        '400':
+          description: >
+            user_id, sku_id или count не являются натуральными числами (больше нуля),
+            либо тело запроса некорректно
+          content:
+            text/plain:
+              schema:
+                type: string
+        '412':
+          description: Товар с таким SKU не существует в product-service
+          content:
+            text/plain:
+              schema:
+                type: string
+        '500':
+          description: Проблемы из-за неисправностей в системе
+          content:
+            text/plain:
+              schema:
+                type: string
+  /user/{user_id}/cart:
+    get:
+      summary: Получить содержимое корзины
+      description: Товары в корзине упорядочены по возрастанию sku.
+      parameters:
+        - $ref: '#/components/parameters/UserID'
+      responses:
+        '200':
+          description: Содержимое корзины
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+        '400':
+          description: user_id не является натуральным числом (больше нуля)
+          content:
+            text/plain:
+              schema:
+                type: string
+        '404':
+          description: Корзины у пользователя нет либо она пуста
+          content:
+            text/plain:
+              schema:
+                type: string
+components:
+  parameters:
+    UserID:
+      name: user_id
+      in: path
+      required: true
+      description: Идентификатор пользователя
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+      example: 1007
+  schemas:
+    AddItemRequest:
+      type: object
+      required:
+        - count
+      properties:
+        count:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 4294967295
+          description: Количество добавляемых единиц товара
+          example: 12
+    CartItem:
+      type: object
+      properties:
+        sku:
+          type: integer
+          format: int64
+          description: Идентификатор товара
+          example: 2958025
+        name:
+          type: string
+          description: Наименование товара
+          example: Roxy Music. Stranded. Remastered Edition
+        count:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 4294967295
+          description: Количество единиц товара
+          example: 2
+        price:
+          type: integer
+          format: int64
+          minimum: 0
+          maximum: 4294967295
+          description: Стоимость единицы товара в условных единицах
+          example: 1028
+    Cart:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartItem'
+        total_price:
+          type: integer
+          format: int64
+          minimum: 0
+          maximum: 4294967295
+          description: Суммарная стоимость всех товаров в корзине
+          example: 2056
