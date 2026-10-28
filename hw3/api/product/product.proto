@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package product;
+
+option go_package = "hw2/api/product";
+
+service ProductService {
+  rpc GetProduct(GetProductRequest) returns (GetProductResponse);
+  rpc ListProducts(ListProductsRequest) returns (ListProductsResponse);
+}
+
+message GetProductRequest {
+  int64 sku = 1;
+}
+
+message GetProductResponse {
+  int64 sku = 1;
+  string name = 2;
+  int32 price = 3;
+}
+
+// page нумеруется с единицы, ноль означает значение по умолчанию.
+message ListProductsRequest {
+  int32 page = 1;
+  int32 limit = 2;
+}
+
+message ListProductsResponse {
+  repeated GetProductResponse products = 1;
+  // total это общее число товаров в каталоге, а не на странице.
+  int32 total = 2;
+}
